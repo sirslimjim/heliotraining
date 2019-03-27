@@ -11,60 +11,40 @@ function randomTime () {
 //      msg: string describing the error
 // * an array of user ids of all the friends for the provided userhandle
 function fetchFriends(userhandle, callback) {
-  
   setTimeout(() => {
     let user = db_data.users.filter(u => u.handle === userhandle)
-
     if(user.length === 0) {
       // Trigger the callback for the unhappy path
-      callback({
-        err:true, 
-        msg:'There is an error'
-      })
+      callback({err:true,msg:'There is an error'},[])
     } else {
       let friendsList = db_data.friends.filter(list => list.user === userhandle)
       // Trigger the callback for the happy path
-      callback(
-        {
-        err:false,
-        msg: 'No error here!'
-        }
-        ,friendsList)
-
+      callback({err:false,msg:null},friendsList[0].friends)
       }
-          
-  }, randomTime());
+    }, randomTime());
 }
 
 function addFriend(userhandle, friendhandle) {
   //First create a new promise (check out mdn if lost)
   return new Promise(function(resolve, reject) {
-    
-    /* filter the users array on db_data for the userhandle */
+     /* filter the users array on db_data for the userhandle */
     let user = db_data.users.filter(u => u.handle === userhandle)
-    
     let friend = db_data.users.filter(u => u.handle === friendhandle) /* filter the users array on db_data for the friendhandle */
-    
-    if(!user || !friend) { /*figure out the conditional to test if we didn't find the user or the friend*/
+    if(!user.length || !friend.length) { /*figure out the conditional to test if we didn't find the user or the friend*/
       reject('Incorrect userhandle provided')
       //  We couldn't find one or the other so tell the promise to do the unhappy path with an argument of 'Incorrect userhandle provided'
     }
-
     let currentFriends = db_data.friends.filter(current => current.user === userhandle)[0]
-
     if(currentFriends.friends.includes(friendhandle)) {
       reject('Users are already friends')
       //  We couldn't find one or the other so tell the promise to do the unhappy path with an argument of 'Users are already friends'
     }
-    
     let updatedFriends = []
     // Create a for loop here to loop over all of db_data friends array
     for(let i=0;i<db_data.friends.length;i++){  
       const selectedFriend = db_data.friends[i]
-
       if(selectedFriend.user === userhandle){
         selectedFriend.friends.push(friendhandle)//Add the friendhandle to the selectedFriend's friends list
-        
         updatedFriends = selectedFriend.friends
         continue;
       } else if (selectedFriend.user === friendhandle) {
@@ -112,14 +92,16 @@ function main() {
           console.log('Its working!')
         // call addFriend backend api with '7e6a2835-0389-42ca-a4f6-321386fd6947', '88c76784-14f6-4ca1-8567-5e2cf23fa23c'
         addFriend('7e6a2835-0389-42ca-a4f6-321386fd6947','88c76784-14f6-4ca1-8567-5e2cf23fa23c')
-          // wrap the following in the happy path:
-          
+        .then((data) => {// wrap the following in the happy path:
             console.log(`Here are the results from addFriend: ${data}`)
-            fetchUser('88c76784-14f6-4ca1-8567-5e2cf23fa23c')
-          
-        
-          // wrap the following in the unhappy path:
-        //   console.log(`AddFriend Error: ${errMsg}`)
+            fetchUser('88c76784-14f6-4ca1-8567-5e2cf23fa23c')})
+     
+            // wrap the following in the unhappy path:
+
+        .catch((errMsg) => {
+
+          console.log(`AddFriend Error: ${errMsg}`)
+        })  
       }
     }
   }
